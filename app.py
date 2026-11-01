@@ -6,8 +6,8 @@ st.set_page_config(page_title="Taiwo-earn by Taiwo David", page_icon="💰")
 
 FOUNDER = "Taiwo David"
 PAYPAL = "taiwodavid@gmail.com"
-PALMPAY = "08100000000"
-WHATSAPP = "2348100000000"
+PALMPAY = "8028519092"
+WHATSAPP = "08028519092"
 
 TIMEWALL = "https://timewall.io/offerwall/PUT_YOUR_ID?uid="
 ADSCEND = "https://asmwall.com/adwall?hash=PUT_HASH?uid="

@@ -1,168 +1,318 @@
-import streamlit as st, json, os, random, time
-from datetime import datetime
+import streamlit as st
+import random
+import time
+from datetime import datetime, date
 
-# --- YOUR LINKS ---
-LINK_A = "YOUR_MONETAG_LINK"
-LINK_B = "YOUR_ADSTERRA_LINK"
-LINK_C = "YOUR_MONETAG_SPIN_LINK"
-ADSCEND_ID = "YOUR_ADSCEND_ID"
-BITLABS_ID = "YOUR_BITLABS_ID"
-LOOTABLY_ID = "YOUR_LOOTABLY_ID"
-PUSH_LINK = "YOUR_MONETAG_PUSH_LINK"
-TELEGRAM_LINK = "https://t.me/YOUR_CHANNEL"
-REWARD = 150
-ADMIN_PASS = "taiwo123" # Change this!
+st.set_page_config(page_title="Taiwo Earn V10 - By Taiwo David", page_icon="💰", layout="centered")
 
-st.set_page_config(page_title="Taiwo-Earn Unlimited", page_icon="💸")
+FOUNDER = "Taiwo David"
+PHONE = "07036325587"
+WA = "2347036325587"
+EMAIL = "tshollyelectrical@gmail.com"
 
-# --- FOREVER DB ---
-DB_FILE = "leaderboard.json"
-def load_db():
-    if os.path.exists(DB_FILE):
-        with open(DB_FILE, "r") as f:
-            return json.load(f)
-    return {}
-def save_db(db):
-    with open(DB_FILE, "w") as f:
-        json.dump(db, f)
+LINKS = {
+    "hilltop": "https://hilltopads.com/?ref=YOUR_ID",
+    "adsterra": "https://www.adsterra.com/?ref=YOUR_ID",
+    "propeller": "https://propellerads.com/?ref=YOUR_ID",
+    "monetag": "https://monetag.com/YOUR_SMARTLINK",
+    "cpagrip": "https://www.cpagrip.com/show.php?l=0&u=YOUR_ID&id=LOCKER",
+    "palmpay": "https://palmpay.com/YOUR_REF_CODE",
+    "opay_ref": "https://opay.com/YOUR_REF_CODE",
+    "youtube": "https://youtube.com/@YOUR_CHANNEL",
+    "telegram": "https://t.me/YOUR_GROUP",
+}
 
-db = load_db()
-
-if "user" not in st.session_state:
-    st.session_state.user = f"User_{random.randint(1000,9999)}"
-if "balance" not in st.session_state:
+# ===== SESSION =====
+if 'balance' not in st.session_state:
     st.session_state.balance = 0
-if "ads" not in st.session_state:
-    st.session_state.ads = 0
-if "tasks" not in st.session_state:
-    st.session_state.tasks = 0
-if "spins" not in st.session_state:
-    st.session_state.spins = 0
+    st.session_state.ads_watched = 0
+    st.session_state.coins = 0
+    st.session_state.energy = 100
+    st.session_state.is_vip = False
+    st.session_state.mining = False
+    st.session_state.streak = 1
+    st.session_state.last_checkin = ""
+    st.session_state.referrals = 0
+    st.session_state.spin_used = False
+    st.session_state.username = "User"
+    st.session_state.level = "Level 1"
 
-# --- CHECK IF ADMIN ---
-query_params = st.query_params
-is_admin = query_params.get("admin", "") == "1"
-
-if is_admin:
-    st.title("🔐 ADMIN DASHBOARD - Taiwo")
-    pwd = st.text_input("Admin Password", type="password")
-    if pwd == ADMIN_PASS:
-        st.success("Welcome Admin!")
-        total_users = len(db)
-        total_tasks_all = sum([v.get('total',0) for v in db.values()])
-        estimated_profit = total_tasks_all * 450
-        c1, c2, c3, c4 = st.columns(4)
-        c1.metric("Total Users", total_users)
-        c2.metric("Total Tasks+Ads", total_tasks_all)
-        c3.metric("Your Profit", f"N{estimated_profit}")
-        c4.metric("Phone Goal", f"N{estimated_profit}/N150k")
-        
-        st.progress(min(estimated_profit/150000, 1.0))
-        if estimated_profit >= 150000:
-            st.balloons()
-            st.success("🎉 YOU CAN BUY YOUR PHONE! N150k REACHED!")
-        
-        st.subheader("All Users Forever Stats")
-        st.json(db)
-        
-        if st.button("Delete Fake User"):
-            user_del = st.selectbox("Select user to delete", list(db.keys()))
-            if st.button(f"Confirm Delete {user_del}"):
-                del db[user_del]
-                save_db(db)
-                st.success("Deleted!")
-                st.rerun()
-    else:
-        st.warning("Enter password")
-    st.stop()
-
-# --- NORMAL USER VIEW ---
-st.title("💸 Taiwo-Earn UNLIMITED")
-st.caption(f"Goal: Help Taiwo buy new phone N150k | Earn N{REWARD} per task UNLIMITED")
-
-c1, c2, c3, c4 = st.columns(4)
-c1.metric("💰 Balance", f"N{st.session_state.balance}")
-c2.metric("📺 Ads", st.session_state.ads)
-c3.metric("📋 Tasks", st.session_state.tasks)
-c4.metric("Total", st.session_state.ads + st.session_state.tasks)
-
-ref = query_params.get("ref", None)
-username_input = st.text_input("Create username to save forever", value=st.session_state.user)
-if username_input:
-    st.session_state.user = username_input
-    your_link = f"https://YOUR-APP-NAME.streamlit.app/?ref={username_input}"
-    st.code(your_link)
-    if ref:
-        st.info(f"Invited by {ref} - Both get bonus after 1st task")
-
-def unlimited_task(name, link, type_name):
-    st.link_button(f"Open {name} 🔥", link)
-    if st.button(f"Claim N{REWARD} - {name}", key=f"{name}_{st.session_state.ads}_{st.session_state.tasks}_{random.randint(1,9999999)}"):
-        st.session_state.balance += REWARD
-        if type_name == "ads":
-            st.session_state.ads += 1
-        else:
-            st.session_state.tasks += 1
-        
-        db[st.session_state.user] = {
-            "balance": st.session_state.balance,
-            "ads": st.session_state.ads,
-            "tasks": st.session_state.tasks,
-            "spins": st.session_state.spins,
-            "total": st.session_state.ads + st.session_state.tasks,
-            "last_seen": datetime.now().strftime("%Y-%m-%d %H:%M"),
-            "ref": ref
-        }
-        save_db(db)
-        st.balloons()
-        st.success(f"N{REWARD} Added! Total Actions: {st.session_state.ads + st.session_state.tasks}")
-        time.sleep(0.3)
-        st.rerun()
-
-col1, col2 = st.columns(2)
-with col1:
-    unlimited_task("Watch Ad A", LINK_A, "ads")
-with col2:
-    unlimited_task("Watch Ad B", LINK_B, "ads")
-
+# ===== HEADER =====
+st.title("💰 Taiwo Earn V10")
+st.caption(f"Founder: **{FOUNDER}** | WhatsApp/OPay: **{PHONE}** | Million Apps Features - 50+ Features")
 st.divider()
-st.subheader(f"📋 Unlimited Tasks - N{REWARD} Each")
-unlimited_task("Adscend Unlimited", f"https://adscendmedia.com/{ADSCEND_ID}", "tasks")
-unlimited_task("BitLabs Unlimited", f"https://bitlabs.io/{BITLABS_ID}", "tasks")
-unlimited_task("Lootably Unlimited", f"https://lootably.com/{LOOTABLY_ID}", "tasks")
 
-st.divider()
-st.subheader("🎰 Daily Spin + Push")
-st.link_button("Spin Now (Ad)", LINK_C)
-if st.button("Claim Spin N50-N500"):
-    win = random.choice([50, 100, 150, 300, 500])
-    st.session_state.balance += win
-    st.session_state.spins += 1
-    st.success(f"Won N{win}! Spins: {st.session_state.spins}")
+c1,c2,c3,c4 = st.columns(4)
+c1.metric("Balance", f"₦{st.session_state.balance}")
+c2.metric("Tasks", f"{st.session_state.ads_watched}/30")
+c3.metric("Coins", st.session_state.coins)
+c4.metric("Energy", f"{st.session_state.energy}%")
+c1,c2,c3 = st.columns(3)
+c1.metric("Streak 🔥", f"{st.session_state.streak} days")
+c2.metric("Referrals 👥", st.session_state.referrals)
+c3.metric("Level", st.session_state.level)
 
-st.link_button("Enable Push - Bonus N100", PUSH_LINK)
-if st.button("I Enabled Push (+N100)"):
-    st.session_state.balance += 100
-    st.success("N100 Added!")
-
-st.link_button("Join Telegram - Bonus N200", TELEGRAM_LINK)
-if st.button("I Joined (+N200)"):
-    st.session_state.balance += 200
-    st.success("N200 Added!")
-
-# Leaderboard
-st.divider()
-st.subheader("🏆 Forever Leaderboard")
-if db:
-    sorted_users = sorted(db.items(), key=lambda x: x[1]['total'], reverse=True)[:10]
-    st.table([{"Rank": f"#{i}", "User": n, "Ads": d.get("ads",0), "Tasks": d.get("tasks",0), "Total": d.get("total",0)} for i,(n,d) in enumerate(sorted_users,1)])
+st.progress(min(st.session_state.ads_watched/30,1.0), text=f"Beginner Rule: {st.session_state.ads_watched}/30 Tasks - By {FOUNDER}")
+if st.session_state.is_vip:
+    st.success(f"👑 VIP MEMBER - N100/task - {FOUNDER}")
 else:
-    st.info("Be first!")
+    st.warning(f"FREE MEMBER - N10/task - Upgrade to VIP N2000 - OPay {PHONE}")
+st.divider()
 
-if st.button("💸 Withdraw Min N2000"):
-    if st.session_state.balance >= 2000:
-        st.success(f"N{st.session_state.balance} Withdrawal Sent!")
+# ===== NEW 1: DAILY CHECK-IN - From Blum/Hamster =====
+st.subheader("📅 DAILY CHECK-IN - N100 to N1000")
+today = str(date.today())
+if st.session_state.last_checkin != today:
+    if st.button("CHECK-IN TODAY - Claim Bonus", use_container_width=True, type="primary"):
+        bonus = 100 * st.session_state.streak
+        st.session_state.balance += bonus
+        st.session_state.last_checkin = today
+        st.session_state.streak += 1
+        st.balloons()
+        st.success(f"Day {st.session_state.streak} Check-in! You got N{bonus}!")
+else:
+    st.info(f"✅ Checked in today! Come back tomorrow for N{100*st.session_state.streak}. Streak: {st.session_state.streak} days")
+
+# ===== NEW 2: REFERRAL SYSTEM - From Pi/TapSwap (Million Maker) =====
+st.divider()
+st.subheader("👥 REFERRAL - N500 Per Friend - Million Maker")
+st.write("Share your link, when friend joins, you earn N500. 100 friends = N50,000")
+ref_name = st.text_input("Your Name for Referral Link", value="Taiwo")
+st.code(f"https://taiwo-earn.streamlit.app/?ref={ref_name}", language="text")
+if st.button("I INVITED 1 FRIEND - Claim N500", use_container_width=True):
+    st.session_state.referrals += 1
+    st.session_state.balance += 500
+    st.success("N500 Referral Bonus Added! Share more!")
+st.link_button("Share on WhatsApp", f"https://wa.me/?text=Join%20Taiwo%20Earn%20by%20{FOUNDER}%20Earn%20N5000%20daily%20-%20https://taiwo-earn.streamlit.app/?ref={ref_name}")
+
+# ===== NEW 3: SPIN WHEEL - From Lucky Apps =====
+st.divider()
+st.subheader("🎡 SPIN WHEEL - Free Daily Spin")
+if not st.session_state.spin_used:
+    if st.button("SPIN NOW - Win up to N1000", use_container_width=True):
+        prize = random.choice([50,100,100,200,500,1000,20,50])
+        st.session_state.balance += prize
+        st.session_state.ads_watched += 1
+        st.session_state.spin_used = True
+        st.balloons()
+        st.success(f"🎉 You won N{prize}!")
+else:
+    st.info("Spin used today. Watch ad to spin again.")
+    if st.button("Watch Ad to Spin Again", use_container_width=True):
+        st.session_state.spin_used = False
+        st.link_button("Watch Ad", LINKS['hilltop'])
+
+# ===== NEW 4: LEADERBOARD - From TapSwap =====
+st.divider()
+st.subheader("🏆 LEADERBOARD - Top Earners")
+st.table({
+    "Rank": ["1 🥇","2 🥈","3 🥉","4","5"],
+    "Name": [FOUNDER, "Chinedu P.H", "Amina Lagos", "Emeka", "You"],
+    "Balance": ["N85,000","N52,000","N41,000","N30,000", f"N{st.session_state.balance}"]
+})
+st.caption("Top earner gets N5000 bonus at month end by Founder")
+
+# ===== NEW 5: SOCIAL TASKS - From Blum/Airdrop Apps =====
+st.divider()
+st.subheader("📱 SOCIAL TASKS - N200 Each - Easy")
+t1, t2, t3 = st.columns(3)
+with t1:
+    if st.button("Follow YouTube N200", use_container_width=True):
+        st.link_button("YouTube", LINKS['youtube'])
+        st.session_state.balance += 200
+        st.session_state.ads_watched += 1
+        st.success("N200 Added!")
+with t2:
+    if st.button("Join Telegram N200", use_container_width=True):
+        st.link_button("Telegram", LINKS['telegram'])
+        st.session_state.balance += 200
+        st.session_state.ads_watched += 1
+        st.success("N200 Added!")
+with t3:
+    if st.button("Share WhatsApp N200", use_container_width=True):
+        st.link_button("Share", f"https://wa.me/?text=Taiwo%20Earn%20by%20{FOUNDER}")
+        st.session_state.balance += 200
+        st.session_state.ads_watched += 1
+        st.success("N200 Added!")
+
+# ===== NEW 6: QUIZ - From Quiz Apps =====
+st.divider()
+st.subheader("🧠 DAILY QUIZ - N300")
+st.write("Who is Founder of Taiwo Earn?")
+quiz = st.radio("Pick answer", ["Taiwo David", "Elon Musk", "Mark Zuckerberg"], key="quiz")
+if st.button("Submit Quiz - Earn N300", use_container_width=True):
+    if quiz == "Taiwo David":
+        st.session_state.balance += 300
+        st.success("Correct! N300 Added!")
     else:
-        st.warning(f"Need N2000, you have N{st.session_state.balance}")
+        st.error("Wrong! Try again tomorrow")
 
-st.caption("Admin? Add ?admin=1 to your link - Example: YOUR-APP-NAME.streamlit.app/?admin=1")
+# ===== NEW 7: BOOSTERS - From Hamster Kombat =====
+st.divider()
+st.subheader("🚀 BOOSTERS - Earn 2X Faster")
+b1,b2 = st.columns(2)
+with b1:
+    if st.button("⚡ 2X TAP - Free Ad", use_container_width=True):
+        st.session_state.energy = 100
+        st.link_button("Activate 2X", LINKS['adsterra'])
+        st.success("2X Activated for 1 hour!")
+with b2:
+    if st.button("🔋 Full Energy - N50", use_container_width=True):
+        st.session_state.energy = 100
+        st.success("Energy Full!")
+
+# ===== OLD FEATURES: TAP / COMBO / CIPHER / MINING / CHEST =====
+st.divider()
+st.subheader("👆 TAP TO EARN - TapSwap Style")
+if st.button("💰 TAP COIN - N5 per Tap", use_container_width=True):
+    if st.session_state.energy > 0:
+        earn = 100 if st.session_state.is_vip else 5
+        st.session_state.balance += earn
+        st.session_state.coins += 1
+        st.session_state.energy -= 5
+        st.toast(f"N{earn} earned!")
+    else:
+        st.warning("No Energy! Watch ad to refill")
+
+st.divider()
+st.subheader("🎯 DAILY COMBO - N500")
+combo = st.multiselect("Combo Hint: Hilltop + Adsterra + Propeller", ["Hilltop","Adsterra","Propeller","AdMaven"])
+if st.button("CHECK COMBO - N500", use_container_width=True):
+    if set(combo) == set(["Hilltop","Adsterra","Propeller"]):
+        st.session_state.balance += 500
+        st.balloons()
+        st.success("COMBO CORRECT! N500!")
+    else:
+        st.error("Wrong combo!")
+
+st.divider()
+st.subheader("🔐 DAILY CIPHER - N1000 - Code: TAIWO")
+cipher = st.text_input("Enter Cipher")
+if st.button("DECODE - N1000", use_container_width=True):
+    if cipher.upper() == "TAIWO":
+        st.session_state.balance += 1000
+        st.success("Cipher Correct! N1000!")
+    else:
+        st.error("Wrong code!")
+
+st.divider()
+st.subheader("⛏️ MINING")
+if not st.session_state.mining:
+    if st.button("START MINING", use_container_width=True):
+        st.session_state.mining = True
+        st.success("Mining Started!")
+else:
+    if st.button("CLAIM MINING N50 - Watch Ad", use_container_width=True):
+        st.session_state.balance += 50
+        st.session_state.ads_watched += 1
+        st.session_state.mining = False
+        st.link_button("Claim Ad", LINKS['adsterra'])
+
+st.divider()
+st.subheader("📦 LUCKY CHEST")
+ch1,ch2,ch3 = st.columns(3)
+for i, col in enumerate([ch1,ch2,ch3]):
+    if col.button(f"🎁 Chest {i+1}", key=f"chest{i}", use_container_width=True):
+        reward = random.choice([20,50,100,500])
+        st.session_state.balance += reward
+        st.session_state.ads_watched += 1
+        col.success(f"N{reward}!")
+
+# ===== KING FEATURES =====
+st.divider()
+st.title("👑 KING FEATURES - Money Makers")
+st.subheader("👑 KING 1: VIP N2000/Month")
+if not st.session_state.is_vip:
+    if st.button("JOIN VIP - N2000 - OPay 07036325587", type="primary", use_container_width=True):
+        st.link_button("Pay VIP via WhatsApp", f"https://wa.me/{WA}?text=Hi%20Taiwo%20I%20want%20VIP%20N2000")
+else:
+    st.success("👑 YOU ARE VIP!")
+
+st.divider()
+st.subheader("💰 KING 2: CPAGrip N4000 - Enter Email Only")
+if st.button("UNLOCK N5000 BONUS - Enter Email", type="primary", use_container_width=True):
+    st.link_button("Unlock - Email Only", LINKS['cpagrip'])
+    if st.button("I ENTERED EMAIL - CLAIM N500", use_container_width=True, key="cpa"):
+        st.session_state.balance += 500
+        st.balloons()
+        st.success("N500 Claimed! Founder earns N4000!")
+
+st.divider()
+st.subheader("💵 KING 3 NEW: PalmPay + OPay Referral - No Timewall")
+st.info("Download PalmPay/OPay, I earn N1500, you earn N500!")
+cr1, cr2 = st.columns(2)
+with cr1:
+    if st.button("DOWNLOAD PALMPAY - N500", use_container_width=True):
+        st.link_button("PalmPay Link", LINKS['palmpay'])
+        st.session_state.balance += 500
+        st.success("N500 Added!")
+with cr2:
+    if st.button("DOWNLOAD OPAY - N500", use_container_width=True):
+        st.link_button("OPay Link", LINKS['opay_ref'])
+        st.session_state.balance += 500
+        st.success("N500 Added!")
+
+st.divider()
+st.subheader("🔗 MONETAG SMARTLINK - Every Click Pays")
+if st.button("CLICK SMARTLINK - N50", use_container_width=True):
+    st.link_button("SmartLink", LINKS['monetag'])
+    st.session_state.ads_watched += 1
+    st.session_state.balance += 50
+
+st.divider()
+st.subheader("📱 KING 4: DATA VENDING - N100 Profit")
+mtn = st.text_input("Phone for Data", placeholder="07036325587")
+if st.button("BUY 1GB N350 - WhatsApp Founder", use_container_width=True):
+    st.link_button("Buy Data", f"https://wa.me/{WA}?text=Hi%20Taiwo%20I%20want%201GB%20N350%20to%20{mtn}")
+
+st.divider()
+st.subheader("🚀 LEVEL UP")
+for lvl, price in {"Level 2 Silver N1500":1500,"Level 3 Gold N3000":3000,"Level 4 Diamond N6000":6000}.items():
+    if st.button(f"UPGRADE TO {lvl}", use_container_width=True, key=lvl):
+        st.link_button(f"Pay N{price} - OPay {PHONE}", f"https://wa.me/{WA}?text=I%20want%20{lvl}%20N{price}")
+
+# ===== NEW 8: AI CHAT / SUPPORT - From Million Apps =====
+st.divider()
+st.subheader("🤖 ASK FOUNDER - AI Support")
+q = st.text_input("Ask anything about earning", placeholder="How do I withdraw?")
+if st.button("Ask Taiwo", use_container_width=True):
+    st.info(f"Hi! I am {FOUNDER}. To withdraw, do 30 tasks, then enter your OPay number. For VIP, pay N2000 to OPay {PHONE} and WhatsApp me. Good luck!")
+
+# ===== COURSE + CLONE =====
+st.divider()
+st.subheader("🎓 LEARN TO BUILD THIS - N15,000")
+if st.button("PAY N15k TO LEARN", type="primary", use_container_width=True):
+    st.link_button(f"Chat {FOUNDER}", f"https://wa.me/{WA}?text=Hi%20Taiwo%20I%20want%20to%20learn%20N15000")
+st.divider()
+st.subheader("🛒 APPS FOR SALE")
+c1,c2 = st.columns(2)
+with c1:
+    if st.button("Buy Clone - N25k", use_container_width=True):
+        st.link_button("Buy Clone", f"https://wa.me/{WA}?text=I%20want%20Clone%20V10%20N25000")
+with c2:
+    if st.button("Custom App - N100k", use_container_width=True):
+        st.link_button("Custom", f"https://wa.me/{WA}?text=I%20need%20custom%20app%20N100k")
+
+# ===== WITHDRAW =====
+st.divider()
+st.subheader("💳 Withdraw")
+if not st.session_state.is_vip and st.session_state.ads_watched < 30:
+    st.error(f"Complete {30 - st.session_state.ads_watched} more tasks! Rule by {FOUNDER}")
+else:
+    st.success(f"Ready to withdraw N{st.session_state.balance}!")
+    opay = st.text_input("Your OPay/PalmPay Number", placeholder="07036325587", key="wd")
+    if st.button("WITHDRAW NOW", type="primary", use_container_width=True):
+        st.success(f"Withdrawal to {opay} requested! {FOUNDER} will pay in 24h via OPay {PHONE}")
+        st.link_button("Confirm via WhatsApp", f"https://wa.me/{WA}?text=Withdraw%20N{st.session_state.balance}%20to%20{opay}")
+
+st.divider()
+st.markdown(f"""
+<center>
+<b>Taiwo Earn V10 Millionaire</b><br>
+Founder & CEO: <b>{FOUNDER}</b><br>
+WhatsApp/OPay: <b>{PHONE}</b><br>
+Email: {EMAIL}<br>
+Port Harcourt, Rivers State<br>
+© 2026 {FOUNDER} - 50+ Features - No Timewall
+</center>
+""", unsafe_allow_html=True)
